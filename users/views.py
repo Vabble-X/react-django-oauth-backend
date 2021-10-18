@@ -13,25 +13,30 @@ from .serializers import *
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def user_authontication(request) :
     if request.method == 'POST' :
-        print(request.data)
         email = request.data['login']
         password = request.data['password']
-        response = {"a":"b"}
-        user_data = Users.objects.all().values().filter(email=email)
-        user_data = list(user_data)
-        print(user_data[0]['id'])
-        if password == user_data[0]['password']:
-            future = datetime.datetime.utcnow() + datetime.timedelta(days=1)
-            payload = {
-                'user_id': user_data[0]['id'],
-                'exp': calendar.timegm(future.timetuple())
-            }
-            token = jwt.encode(payload, 'secret', algorithm='HS256').decode('utf-8')
-            response = {'token': token}
-            return Response(response)
-        else:
-            response = {'error': 'Invalid data!'}
-            return JsonResponse(response)
+        response = ''
+        user_data = ''
+        try:
+            Users.objects.get(email=email)
+            user_data = Users.objects.all().values().filter(email=email)
+        except Users.DoesNotExist:
+            response = {'error': 'User does not exist!'}
+
+        if len(user_data) > 0:
+            user_data = list(user_data)
+            if password == user_data[0]['password']:
+                future = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+                payload = {
+                    'user_id': user_data[0]['id'],
+                    'exp': calendar.timegm(future.timetuple())
+                }
+                token = jwt.encode(payload, 'secret', algorithm='HS256').decode('utf-8')
+                response = {'token': token}
+            else:
+                response = {'error': 'Invalid data!'}
+
+        return JsonResponse(response)
 
 @csrf_exempt
 def get_user_data(request):
@@ -42,10 +47,8 @@ def get_user_data(request):
 
     try:
         jwt_data = jwt.decode(token, 'secret', algorithms=['HS256'])
-        print("@@@@@@@@@ jwt_data @@@@@@@@@@@", jwt_data)
         user_data = Users.objects.all().values().filter(id=jwt_data['user_id'])
         user_data = list(user_data)
-        print(user_data)
         response = {
             'email': user_data[0]['email'],
             'role': user_data[0]['role'],
