@@ -2,7 +2,10 @@ from rest_framework.decorators import api_view, renderer_classes
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
-import json, jwt, datetime, calendar
+import json
+import jwt
+import datetime
+import calendar
 from .models import *
 from .serializers import *
 
@@ -10,8 +13,8 @@ from .serializers import *
 # @csrf_exempt
 @api_view(['GET', 'POST'])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
-def user_authontication(request) :
-    if request.method == 'POST' :
+def user_authontication(request):
+    if request.method == 'POST':
         email = request.data['login']
         password = request.data['password']
         g_token = request.data['token']
@@ -31,20 +34,23 @@ def user_authontication(request) :
                     'user_id': user_data[0]['id'],
                     'exp': calendar.timegm(future.timetuple())
                 }
-                token = jwt.encode(payload, 'secret', algorithm='HS256').decode('utf-8')
+                token = jwt.encode(payload, 'secret',
+                                   algorithm='HS256').decode('utf-8')
                 response = {'token': token}
-            elif len(g_token) > 0 :
+            elif len(g_token) > 0:
                 future = datetime.datetime.utcnow() + datetime.timedelta(days=1)
                 payload = {
                     'user_id': user_data[0]['id'],
                     'exp': calendar.timegm(future.timetuple())
                 }
-                token = jwt.encode(payload, 'secret', algorithm='HS256').decode('utf-8')
+                token = jwt.encode(payload, 'secret',
+                                   algorithm='HS256').decode('utf-8')
                 response = {'token': token}
             else:
                 response = {'error': 'Invalid data!'}
-                
+
         return JsonResponse(response)
+
 
 @csrf_exempt
 def get_user_data(request):
